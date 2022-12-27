@@ -1,140 +1,256 @@
 import pygame
+import os
+import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("map", type=str, nargs="?", default="map.txt")
+args = parser.parse_args()
+map_file = args.map
 
 
-class Board:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.board = [[0] * width for _ in range(height)]
-        self.left = 10
-        self.top = 10
-        self.cell_size = 30
+def load_image(name, color_key=None):
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname)
+    except pygame.error as message:
+        print('Не удаётся загрузить:', name)
+        raise SystemExit(message)
+    image = image.convert_alpha()
+    if color_key is not None:
+        if color_key is -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    return image
 
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
 
-    def get_cell(self, mouse_pos):
-        cell_x = (mouse_pos[0] - self.left) // self.cell_size
-        cell_y = (mouse_pos[1] - self.top) // self.cell_size
-        if cell_x < 0 or cell_x >= self.width or cell_y < 0 or cell_y >= self.height:
-            return None
-        return cell_x, cell_y
+pygame.init()
+screen_size = (600, 600)
+screen = pygame.display.set_mode(screen_size)
+FPS = 50
+tile_images = {
+    'wall': load_image('box.png'),
+    'empty': load_image('grass.png')
+}
+player_image = load_image('mario.png')
+tile_width = tile_height = 50
 
-    def on_click(self, cell):
+
+class SpriteGroup(pygame.sprite.Group):
+
+    def __init__(self):
+        super().__init__()
+
+    def shift(self, vector):
+        global level_map
+        if vector == "up":
+            max_lay_y = max(self, key=lambda sprite:
+            sprite.abs_pos[1]).abs_pos[1]
+            for sprite in self:
+                sprite.abs_pos[1] -= (tile_height * max_y
+                                      if sprite.abs_pos[1] == max_lay_y else 0)
+        elif vector == "down":
+            min_lay_y = min(self, key=lambda sprite:
+            sprite.abs_pos[1]).abs_pos[1]
+            for sprite in self:
+                sprite.abs_pos[1] += (tile_height * max_y
+                                      if sprite.abs_pos[1] == min_lay_y else 0)
+        elif vector == "left":
+            max_lay_x = max(self, key=lambda sprite:
+            sprite.abs_pos[0]).abs_pos[0]
+            for sprite in self:
+                if sprite.abs_pos[0] == max_lay_x:
+                    sprite.abs_pos[0] -= tile_width * max_x
+        elif vector == "right":
+            min_lay_x = min(self, key=lambda sprite:
+            sprite.abs_pos[0]).abs_pos[0]
+            for sprite in self:
+                sprite.abs_pos[0] += (tile_height * max_x
+                                      if sprite.abs_pos[0] == min_lay_x else 0)
+
+
+class Sprite(pygame.sprite.Sprite):
+
+    def __init__(self, group):
+        super().__init__(group)
+        self.rect = None
+
+    def get_event(self, event):
         pass
 
-    def get_click(self, mouse_pos):
-        cell = self.get_cell(mouse_pos)
-        if cell and cell < (self.width, self.height):
-            self.on_click(cell)
 
-    def render(self, screen):
-        for y in range(self.height):
-            for x in range(self.width):
-                pygame.draw.rect(screen, pygame.Color(255, 255, 255),
-                                 (x * self.cell_size + self.left, y * self.cell_size + self.top,
-                                  self.cell_size,
-                                  self.cell_size), 1)
+class Tile(Sprite):
+    def __init__(self, tile_type, pos_x, pos_y):
+        super().__init__(sprite_group)
+        self.image = tile_images[tile_type]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+        self.abs_pos = [self.rect.x, self.rect.y]
 
-
-class Lines(Board):
-    def __init__(self, width, height):
-        super().__init__(width, height)
-        self.selected_cell = None
-
-    def has_path(self, x1, y1, x2, y2):
-        pass
-        # # словарь расстояний
-        # d = {(x1, y1): 0}
-        # v = [(x1, y1)]
-        # while len(v) > 0:
-        #     x, y = v.pop(0)
-        #     for dy in range(-1, 2):
-        #         for dx in range(-1, 2):
-        #             if dx * dy != 0:
-        #                 continue
-        #             if x + dx < 0 or x + dx >= self.width or y + dy < 0 or y + dy >= self.height:
-        #                 continue
-        #             if self.board[y + dy][x + dx] == 0:
-        #                 dn = d.get((x + dx, y + dy), -1)
-        #                 if dn == -1:
-        #                     d[(x + dx, y + dy)] = d.get((x, y), -1) + 1
-        #                     v.append((x + dx, y + dy))
-        # dist = d.get((x2, y2), -1)
-        # return dist >= 0
+    def set_pos(self, x, y):
+        self.abs_pos = [x, y]
 
 
-    def on_click(self, cell):
-        pass
-        # x = cell[0]
-        # y = cell[1]
-        # if self.selected_cell is None:
-        #
-        #     if self.board[y][x] == 1:
-        #         self.selected_cell = x, y
-        #     else:
-        #         self.board[y][x] = 1
-        #
-        # else:
-        #     if self.selected_cell == (x, y):
-        #         self.selected_cell = None
-        #         return
-        #
-        #     x2 = self.selected_cell[0]
-        #     y2 = self.selected_cell[1]
-        #     if self.has_path(x2, y2, x, y):
-        #         self.board[y][x] = 1
-        #         self.board[y2][x2] = 0
-        #         self.selected_cell = None
+class Player(Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(hero_group)
+        self.image = player_image
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x + 15, tile_height * pos_y + 5)
+        self.pos = (pos_x, pos_y)
 
-    def render(self, screen):
-        pass
-        # for y in range(self.height):
-        #     for x in range(self.width):
-        #
-        #         if self.board[y][x] == 1:
-        #             color = pygame.Color("blue")
-        #             if self.selected_cell == (x, y):
-        #                 color = pygame.Color("red")
-        #             pygame.draw.ellipse(screen, color,
-        #                                 (x * self.cell_size + self.left,
-        #                                  y * self.cell_size + self.top, self.cell_size,
-        #                                  self.cell_size))
-        #
-        #         pygame.draw.rect(screen, pygame.Color(255, 255, 255),
-        #                          (x * self.cell_size + self.left, y * self.cell_size + self.top,
-        #                           self.cell_size,
-        #                           self.cell_size), 1)
+    def move(self, x, y):
+        camera.dx -= tile_width * (x - self.pos[0])
+        camera.dy -= tile_height * (y - self.pos[1])
+        print(camera.dx, camera.dy)  # текущие координаты
+        self.pos = (x, y)
+        for sprite in sprite_group:
+            camera.apply(sprite)
 
 
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
 
-def main():
-    pygame.init()
-    size = 420, 420
-    screen = pygame.display.set_mode(size)
-    clock = pygame.time.Clock()
-    pygame.display.set_caption('Проект PG')
-    board = Lines(10, 10)
-    board.set_view(10, 10, 40)
-    ticks = 0
-    running = True
-    while running:
+    def apply(self, obj):
+        obj.rect.x = obj.abs_pos[0] + self.dx
+        obj.rect.y = obj.abs_pos[1] + self.dy
+
+    def update(self, target):
+        self.dx = 0
+        self.dy = 0
+
+
+player = None
+running = True
+clock = pygame.time.Clock()
+sprite_group = SpriteGroup()
+hero_group = SpriteGroup()
+
+
+def terminate():
+    pygame.quit()
+    sys.exit
+
+
+def start_screen():
+    intro_text = ["Перемещение героя",
+                  "",
+                  "На торе"]
+
+    fon = pygame.transform.scale(load_image('fon.jpg'), screen_size)
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50  # отступ сверху
+    for line in intro_text:
+        string_rendered = font.render(line, False, [255, 255, 205])
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10  # отступ от боковой грани
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                board.get_click(event.pos)
-        screen.fill((0, 0, 0))
-        board.render(screen)
-        if ticks == 50:
-            ticks = 0
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
         pygame.display.flip()
-        clock.tick(50)
-        ticks += 1
-    pygame.quit()
+        clock.tick(FPS)
 
 
-if __name__ == '__main__':
-    main()
+def load_level(filename):
+    filename = "data/" + filename
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+    max_width = max(map(len, level_map))
+    return list(map(lambda x: list(x.ljust(max_width, '.')), level_map))
+
+
+def generate_level(level):
+    new_player, x, y = None, None, None
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile('empty', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
+            elif level[y][x] == '@':
+                Tile('empty', x, y)
+                new_player = Player(x, y)
+                level[y][x] = "."
+    return new_player, x, y
+
+
+def move(hero, movement):
+    x, y = hero.pos
+    if movement == "up":
+        prev_y = y - 1 if y != 0 else max_y
+        if level_map[prev_y][x] == ".":
+            if prev_y == max_y:
+                for i in range(max_y - 1):
+                    sprite_group.shift("down")
+                hero.move(x, prev_y - 1)
+            else:
+                sprite_group.shift("up")
+                hero.move(x, prev_y)
+    elif movement == "down":
+        next_y = y + 1 if y != max_y else 0
+        if level_map[next_y][x] == ".":
+            if next_y == 0:
+                for i in range(max_y - 1):
+                    sprite_group.shift("up")
+                hero.move(x, next_y + 1)
+            else:
+                sprite_group.shift("down")
+                hero.move(x, next_y)
+    elif movement == "left":
+        prev_x = x - 1 if x != 0 else max_x
+        if level_map[y][prev_x] == ".":
+            if prev_x == max_x:
+                for i in range(max_x - 1):
+                    sprite_group.shift("right")
+                hero.move(prev_x - 1, y)
+            else:
+                sprite_group.shift("left")
+                hero.move(prev_x, y)
+    elif movement == "right":
+        next_x = x + 1 if x != max_x else 0
+        if level_map[y][next_x] == ".":
+            if next_x == 0:
+                for i in range(max_x - 1):
+                    sprite_group.shift("left")
+                hero.move(next_x + 1, y)
+            else:
+                sprite_group.shift("right")
+                hero.move(next_x, y)
+
+
+start_screen()
+camera = Camera()
+level_map = load_level(map_file)
+hero, max_x, max_y = generate_level(level_map)
+camera.update(hero)
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                move(hero, "up")
+            elif event.key == pygame.K_DOWN:
+                move(hero, "down")
+            elif event.key == pygame.K_LEFT:
+                move(hero, "left")
+            elif event.key == pygame.K_RIGHT:
+                move(hero, "right")
+    screen.fill(pygame.Color("black"))
+    sprite_group.draw(screen)
+    hero_group.draw(screen)
+    clock.tick(FPS)
+    pygame.display.flip()
+pygame.quit()
