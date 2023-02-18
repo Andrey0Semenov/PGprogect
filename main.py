@@ -76,10 +76,7 @@ def collision1():
     global ball, bar, ball_y, ball_x, vely, velx, mousedir, bricks
     global diff, lives, stage, score, loop, game, randomstage
     if ball.rect.colliderect(bar):
-        print("sulla barra: ", ball.x - bar.x)
-        print("Diff=", diff)
         pygame.mixer.Sound.play(hitbar)
-        # when the ball hit the bar, it goes up
         ball_y = "up"
         if (mousedir == "left" and ball_x == "right"):
             ball_x = "left"
@@ -87,7 +84,6 @@ def collision1():
             ball_x = "right"
     for n, brick in enumerate(bricks):
         if ball.rect.colliderect(brick):
-            # screen.fill((0, 0, 0))
             pygame.draw.rect(screen, (0, 0, 0), brick.rect)
             screen.blit(update_fps(color="Black"), (12, 10))
             score += 20
@@ -115,7 +111,6 @@ def collision1():
                 screen.fill((0, 0, 0))
                 ball.y = 300
                 ball.x = 100
-                pygame.mixer.Sound.play(s_ready)
                 if randomstage == 1:
                     game = randrange(1, 5)
                 if game == 1:
@@ -187,7 +182,6 @@ def create_bricks2():
         riga = [str(choice([0, 1])) for x in range(4)]
         riga2 = riga[::-1]
         riga = riga + riga2
-        # print(riga)
         blist.append("".join(riga))
     bricks = []
     h = 50
@@ -212,7 +206,6 @@ def create_bricks3():
         riga = [str(choice([0, 1])) for x in range(column)]
         riga2 = riga[::-1]
         riga = riga + riga2
-        # print(riga)
         blist.append("".join(riga))
 
     bricks = []
@@ -258,8 +251,8 @@ def create_bricks4():
                 h += 21
     return bricks
 
-
-def write_highest_score():  ######################  рекорды
+##########################################################################################################################
+def write_highest_score():  ######################  Нужно заменить текстовые файлы на базу данных
     global score, scoremax
     with open("score.txt", "w") as file:
         if scoremax < score:
@@ -268,7 +261,7 @@ def write_highest_score():  ######################  рекорды
 
 def update_fps(color="Coral"):
     global score, scoremax
-    fps = f"Max: {scoremax} Lives: {lives} Stage: {stage} Score: {score} "
+    fps = f"Макс: {scoremax}  |   Жизней: {lives}  |   Счет: {score} "
     fps_text = font.render(fps, 1, pygame.Color(color))
     return fps_text
 
@@ -311,7 +304,7 @@ def get_score():
     else:
         with open(scorefile, "w") as file:
             file.write("100")
-
+############################################################################################
 
 def set_score():
     global score, randomstage
@@ -384,12 +377,10 @@ def back_to_menu():
 
 def mainloop():
     global startx, mousedir, diff, game
-    pygame.mixer.Sound.play(s_ready)
     show_bricks()
     get_score()
     loop = 1
     while loop:
-
         pygame.draw.rect(screen, (0, 0, 0), (bar.x, bar.y, bar.w, bar.h))
         gfxdraw.filled_circle(screen, ball.x, ball.y, ball.size // 2, (0, 0, 0))
         for event in pygame.event.get():
@@ -408,7 +399,6 @@ def mainloop():
         posx = pygame.mouse.get_pos()[0]
         if pygame.mouse.get_pos()[1] > 400:
             bar.y = pygame.mouse.get_pos()[1]
-
         if posx > 10 and posx < 430 + 60 - bar.w:
             bar.x = posx
         diff = startx - posx
@@ -439,15 +429,15 @@ randomstage = 0
 def mainmenu():
     global game, randomstage
     screen.fill((0, 0, 0))
-    write("ARKAGAME", 200, 120, color="yellow")
-    write("CHOOSE YOUR GAME", 200, 300, color="green")
-    write("1 - Arkanoid Monochrome", 150, 340)
-    write("2 - Arkanoid Polichrome", 150, 360)
-    write("3 - Arkanoid tiny", 150, 380)
-    write("4 - Arkanoid tiny 2", 150, 400)
-    write("5 - RANDONOID", 150, 420)
-    # write("4 - Arkanoid tiny 2", 150, 400)
-    write("Выберите уровень нажав соответствущую цифру на клавиатуре", 10, 480, color="gray")
+    write("АРКАНОИД", 200, 120, color="yellow")
+    write("Выберите уровень", 200, 180, color="green")
+    write("1 - I уровень", 150, 210)
+    write("2 - II уровень", 150, 230)
+    write("3 - III уровень", 150, 250)
+    write("4 - IV уровень", 150, 270)
+    write("5 - V уровень", 150, 290)
+    write("Выберите уровень,", 10, 450, color="gray")
+    write("нажав цифру на клавиатуре", 10, 480, color="gray")
     loop = 1
     while loop:
         for event in pygame.event.get():
@@ -498,11 +488,10 @@ pygame.init()
 pygame.mixer.quit()
 pygame.mixer.init(22050, -16, 2, 512)
 pygame.mixer.set_num_channels(32)
-hitbar = pygame.mixer.Sound('sound\\hitbar2.wav')
+hitbar = pygame.mixer.Sound('sound\\kosanie.wav')
 s_out = pygame.mixer.Sound('sound\\outspeech.wav')
 hitbrick = pygame.mixer.Sound('sound\\hitbrick.wav')
-s_ready = pygame.mixer.Sound('sound\\ready.wav')
-s_over = pygame.mixer.Sound('sound\\over.wav')
+s_over = pygame.mixer.Sound('sound\\kosanie.wav')  ################ Добавить звук проигрыша
 s_wall = pygame.mixer.Sound('sound\\wall.wav')
 screen = pygame.display.set_mode((500, 500))
 pygame.display.set_caption("ArkaGame 5.0 by pythonprogramming.altervista.org")
