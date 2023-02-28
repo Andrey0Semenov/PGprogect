@@ -497,7 +497,6 @@ screen = pygame.display.set_mode((500, 500))
 pygame.display.set_caption("ArkaGame 5.0 by pythonprogramming.altervista.org")
 clock = pygame.time.Clock()
 startx = 0
-background = pygame.image.load("img\\background.png").convert()
 barrier = pygame.image.load("img\\barrier.png").convert()
 pygame.mouse.set_visible(False)
 mousedir = "stop"
